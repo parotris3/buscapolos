@@ -45,18 +45,18 @@ def main():
         print(f"Ejecución diaria para {OUTPUT_FILE}: buscando en las últimas 24 horas.")
         since_date = (datetime.now() - timedelta(hours=24)).strftime('%Y-%m-%d')
 
-    # --- CONSULTA CORREGIDA Y SIMPLIFICADA ---
-    # Buscamos la palabra "mpd" junto a "manifest" O "DASH", sin limitar la extensión de archivo.
-    # Esta consulta es mucho más simple y evita el error 422.
-    query = f'"mpd" AND (manifest OR DASH) pushed:>{since_date}'
+    # --- CONSULTA FINAL Y SIMPLIFICADA ---
+    # Simplemente buscamos la palabra "mpd" en archivos actualizados recientemente.
+    # Esta es la consulta más simple posible y es la que tiene más probabilidades de funcionar.
+    query = f'mpd pushed:>{since_date}'
     
     files_containing_mpd = search_github(query)
     
     if not files_containing_mpd:
-        print("No se encontraron archivos nuevos que contengan enlaces .mpd.")
+        print("No se encontraron archivos nuevos que contengan la palabra 'mpd'.")
         return
 
-    # El resto del script no cambia
+    # El resto del script no cambia. Su lógica de filtrado interno es la que hará el trabajo.
     with open(OUTPUT_FILE, 'r', encoding='utf-8') as f:
         existing_links = set(line.split(',')[0].replace('Enlace: ', '').strip() for line in f if line.startswith("Enlace: "))
 
