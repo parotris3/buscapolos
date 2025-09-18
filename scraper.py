@@ -52,7 +52,7 @@ def search_github(query):
             
             print(f"Página {page} procesada, {len(page_results)} resultados. Continuando...")
             # Pausa para no sobrecargar la API de GitHub y evitar errores de rate limit
-            time.sleep(2)
+            time.sleep(15)
 
         except requests.exceptions.RequestException as e:
             print(f"Error en la página {page}: {e}")
