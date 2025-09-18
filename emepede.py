@@ -10,7 +10,7 @@ if not GITHUB_TOKEN:
 OUTPUT_FILE = "trocalaoca.txt"
 API_URL = "https://api.github.com/search/code"
 
-# Las funciones auxiliares no cambian
+# La función handle_rate_limit no cambia
 def handle_rate_limit(response):
     if response.status_code == 429:
         print("⚠️ Límite de peticiones alcanzado. Esperando 60 segundos...")
@@ -18,6 +18,7 @@ def handle_rate_limit(response):
         return True
     return False
 
+# La función search_github no cambia
 def search_github(query):
     print(f"Ejecutando la consulta en GitHub: '{query}'")
     headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
@@ -36,23 +37,23 @@ def main():
     open(OUTPUT_FILE, 'a').close()
     
     if not os.path.exists(OUTPUT_FILE) or os.path.getsize(OUTPUT_FILE) == 0:
-        print(f"Primera ejecución para {OUTPUT_FILE}: buscando en los últimos 90 días.")
-        since_date = (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d')
+        print(f"Primera ejecución para {OUTPUT_FILE}: buscando en los últimos 15 días.")
+        since_date = (datetime.now() - timedelta(days=15)).strftime('%Y-%m-%d')
     else:
         print(f"Ejecución diaria para {OUTPUT_FILE}: buscando en las últimas 24 horas.")
         since_date = (datetime.now() - timedelta(hours=24)).strftime('%Y-%m-%d')
 
-    # --- CONSULTA CORREGIDA ---
-    # Reintroducimos "in:file" para forzar la búsqueda dentro del contenido del archivo.
-    query = f'mpd in:file pushed:>{since_date}'
+    # --- CONSULTA FINAL Y CORRECTA ---
+    # Buscamos archivos que contengan la palabra "http" Y la cadena exacta ".mpd".
+    # Esto es un indicador muy fuerte de que el archivo contiene un enlace completo.
+    query = f'http ".mpd" pushed:>{since_date}'
     
     files_containing_mpd = search_github(query)
     
     if not files_containing_mpd:
-        print("No se encontraron archivos nuevos que contengan la palabra 'mpd'.")
+        print("No se encontraron archivos que cumplan los criterios de búsqueda.")
         return
 
-    # El resto del script no cambia
     with open(OUTPUT_FILE, 'r', encoding='utf-8') as f:
         existing_links = set(line.split(',')[0].replace('Enlace: ', '').strip() for line in f if line.startswith("Enlace: "))
 
@@ -63,14 +64,20 @@ def main():
         for file_item in files_containing_mpd:
             repo_url = file_item['repository']['html_url']
             raw_url = file_item['html_url'].replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/")
+            
             try:
-                time.sleep(2)
+                time.sleep(2) # Pausa entre descargas de archivos
                 content_response = requests.get(raw_url, timeout=10)
                 if content_response.status_code != 200:
                     continue
+
                 for line in content_response.text.splitlines():
-                    clean_line = line.strip()
-                    if '.mpd' in clean_line and 'http' in clean_line and clean_line not in existing_links:
+                    # --- LÓGICA DE FILTRADO MEJORADA ---
+                    # Limpiamos la línea de espacios y comillas comunes
+                    clean_line = line.strip().strip('\'"')
+                    
+                    # Verificamos que la línea COMIENCE con http y TERMINE con .mpd
+                    if clean_line.startswith('http') and clean_line.endswith('.mpd') and clean_line not in existing_links:
                         output = f"Enlace: {clean_line}, Repositorio: {repo_url}\n"
                         f.write(output)
                         existing_links.add(clean_line)
