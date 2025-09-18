@@ -2,44 +2,52 @@ import os
 import requests
 from datetime import datetime, timedelta
 
-# Token de autenticación de GitHub (proporcionado por GitHub Actions)
+# ... (el resto de las variables GITHUB_TOKEN, OUTPUT_FILE, API_URL no cambian) ...
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 if not GITHUB_TOKEN:
     raise ValueError("No se encontró el GITHUB_TOKEN. Asegúrate de que se está ejecutando en un entorno de GitHub Actions.")
 
-# Nombre del archivo donde se guardarán los enlaces
 OUTPUT_FILE = "todas.txt"
-# URL de la API de búsqueda de código de GitHub
 API_URL = "https://api.github.com/search/code"
+
 
 def get_search_date():
     """Determina la fecha de búsqueda: 7 días si el archivo no existe, 24 horas si ya existe."""
     if not os.path.exists(OUTPUT_FILE):
         print("Primera ejecución: buscando en los últimos 7 días.")
-        return (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+        # Usamos 6 días para tener un margen seguro con la zona horaria
+        return (datetime.now() - timedelta(days=6)).strftime('%Y-%m-%d')
     else:
         print("Ejecución diaria: buscando en las últimas 24 horas.")
         return (datetime.now() - timedelta(hours=24)).strftime('%Y-%m-%d')
 
 def search_github(since_date):
-    """Busca en GitHub archivos .m3u creados o modificados después de la fecha indicada."""
-    query = f'extension:m3u created:>{since_date}'
+    """Busca en GitHub archivos .m3u en repositorios actualizados después de la fecha indicada."""
+    # --- LÍNEAS MODIFICADAS ---
+    # Usamos "pushed:" para encontrar repositorios actualizados recientemente.
+    
+    query = f'extension:m3u pushed:>{since_date}'
+    print(f"Ejecutando la consulta en GitHub: '{query}'") # Añadimos un print para depuración
+    # -------------------------
+
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json"
     }
     params = {
         "q": query,
-        "per_page": 100  # Máximo permitido por la API
+        "per_page": 100
     }
     
     try:
         response = requests.get(API_URL, headers=headers, params=params)
-        response.raise_for_status()  # Lanza un error si la petición falla (e.g., 4xx o 5xx)
+        response.raise_for_status()
         return response.json().get('items', [])
     except requests.exceptions.RequestException as e:
         print(f"Error al contactar la API de GitHub: {e}")
         return []
+
+# ... (las funciones get_existing_links y main se mantienen igual que antes) ...
 
 def get_existing_links():
     """Lee los enlaces que ya existen en el archivo para evitar duplicados."""
@@ -62,8 +70,6 @@ def main():
     
     with open(OUTPUT_FILE, 'a', encoding='utf-8') as f:
         for item in results:
-            # La URL 'html_url' te lleva a la vista del archivo en GitHub.
-            # Para el enlace directo al contenido (raw), hacemos una pequeña transformación.
             raw_url = item['html_url'].replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/")
             
             if raw_url not in existing_links:
