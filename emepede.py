@@ -36,8 +36,8 @@ def main():
     open(OUTPUT_FILE, 'a').close()
     
     if not os.path.exists(OUTPUT_FILE) or os.path.getsize(OUTPUT_FILE) == 0:
-        print(f"Primera ejecución para {OUTPUT_FILE}: buscando en los últimos 10 días.")
-        since_date = (datetime.now() - timedelta(days=10)).strftime('%Y-%m-%d')
+        print(f"Primera ejecución para {OUTPUT_FILE}: buscando en los últimos 90 días.")
+        since_date = (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d')
     else:
         print(f"Ejecución diaria para {OUTPUT_FILE}: buscando en las últimas 24 horas.")
         since_date = (datetime.now() - timedelta(hours=24)).strftime('%Y-%m-%d')
