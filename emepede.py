@@ -10,16 +10,16 @@ if not GITHUB_TOKEN:
 OUTPUT_FILE = "trocalaoca.txt"
 API_URL = "https://api.github.com/search/code"
 
+# La función handle_rate_limit no cambia
 def handle_rate_limit(response):
-    """Detecta un error de límite de peticiones y espera."""
     if response.status_code == 429:
         print("⚠️ Límite de peticiones alcanzado. Esperando 60 segundos...")
         time.sleep(60)
         return True
     return False
 
+# La función search_github no cambia
 def search_github(query):
-    """Busca en GitHub con un único reintento en caso de error 429."""
     print(f"Ejecutando la consulta en GitHub: '{query}'")
     headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
     params = {"q": query, "per_page": 100}
@@ -27,7 +27,6 @@ def search_github(query):
     try:
         response = requests.get(API_URL, headers=headers, params=params)
         if handle_rate_limit(response):
-            # Si hay error, lo reintentamos una vez después de esperar
             response = requests.get(API_URL, headers=headers, params=params)
         
         response.raise_for_status()
@@ -46,13 +45,18 @@ def main():
         print(f"Ejecución diaria para {OUTPUT_FILE}: buscando en las últimas 24 horas.")
         since_date = (datetime.now() - timedelta(hours=24)).strftime('%Y-%m-%d')
 
-    query = f'(manifest OR DASH) AND mpd extension:txt extension:md extension:json pushed:>{since_date}'
+    # --- CONSULTA CORREGIDA Y SIMPLIFICADA ---
+    # Buscamos la palabra "mpd" junto a "manifest" O "DASH", sin limitar la extensión de archivo.
+    # Esta consulta es mucho más simple y evita el error 422.
+    query = f'"mpd" AND (manifest OR DASH) pushed:>{since_date}'
+    
     files_containing_mpd = search_github(query)
     
     if not files_containing_mpd:
         print("No se encontraron archivos nuevos que contengan enlaces .mpd.")
         return
 
+    # El resto del script no cambia
     with open(OUTPUT_FILE, 'r', encoding='utf-8') as f:
         existing_links = set(line.split(',')[0].replace('Enlace: ', '').strip() for line in f if line.startswith("Enlace: "))
 
@@ -65,7 +69,6 @@ def main():
             raw_url = file_item['html_url'].replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/")
             
             try:
-                # PAUSA AÑADIDA entre cada descarga de archivo
                 time.sleep(2)
                 content_response = requests.get(raw_url, timeout=10)
                 if content_response.status_code != 200:
