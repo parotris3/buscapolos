@@ -1,9 +1,8 @@
 import os
 import requests
 from datetime import datetime, timedelta
-import time # Importamos la librería time para añadir pausas
+import time
 
-# Token de autenticación de GitHub (proporcionado por GitHub Actions)
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 if not GITHUB_TOKEN:
     raise ValueError("No se encontró el GITHUB_TOKEN...")
@@ -11,79 +10,66 @@ if not GITHUB_TOKEN:
 OUTPUT_FILE = "todas.txt"
 API_URL = "https://api.github.com/search/code"
 
-def get_search_date():
-    """Determina la fecha de búsqueda."""
-    if not os.path.exists(OUTPUT_FILE):
-        print("Primera ejecución: buscando en los últimos 7 días.")
-        return (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-    else:
-        print("Ejecución diaria: buscando en las últimas 24 horas.")
-        return (datetime.now() - timedelta(hours=24)).strftime('%Y-%m-%d')
+def handle_rate_limit(response):
+    """Detecta un error de límite de peticiones y espera."""
+    if response.status_code == 429:
+        print("⚠️ Límite de peticiones alcanzado. Esperando 60 segundos...")
+        time.sleep(60)
+        return True # Indica que se debe reintentar
+    return False
 
 def search_github(query):
-    """Busca en GitHub usando la consulta y recorriendo las páginas de resultados."""
+    """Busca en GitHub con reintentos automáticos en caso de error 429."""
     print(f"Ejecutando la consulta en GitHub: '{query}'")
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
-    }
-    
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
     all_results = []
-    # La API de GitHub devuelve un máximo de 10 páginas (1000 resultados)
-    for page in range(1, 11): 
-        params = {
-            "q": query,
-            "per_page": 100,
-            "page": page
-        }
-        
-        try:
-            response = requests.get(API_URL, headers=headers, params=params)
-            response.raise_for_status()
-            
-            data = response.json()
-            page_results = data.get('items', [])
-            all_results.extend(page_results)
-            
-            # Si la página actual tiene menos de 100 resultados, es la última página.
-            if len(page_results) < 100:
-                print(f"Se encontró la última página ({page}). Terminando búsqueda.")
-                break
-            
-            print(f"Página {page} procesada, {len(page_results)} resultados. Continuando...")
-            # Pausa para no sobrecargar la API de GitHub y evitar errores de rate limit
-            time.sleep(15)
 
-        except requests.exceptions.RequestException as e:
-            print(f"Error en la página {page}: {e}")
-            # Si una página falla, es mejor parar para no obtener resultados incompletos.
-            break
-            
+    for page in range(1, 11): # Hasta 10 páginas (1000 resultados)
+        params = {"q": query, "per_page": 100, "page": page}
+        
+        while True: # Bucle de reintento
+            try:
+                response = requests.get(API_URL, headers=headers, params=params)
+                if handle_rate_limit(response):
+                    continue # Vuelve a intentarlo si hubo un error de rate limit
+                
+                response.raise_for_status() # Lanza error para otros códigos (404, 500, etc.)
+                
+                data = response.json()
+                page_results = data.get('items', [])
+                all_results.extend(page_results)
+                
+                print(f"Página {page} procesada, {len(page_results)} resultados.")
+                
+                if len(page_results) < 100:
+                    print("Se encontró la última página. Terminando búsqueda.")
+                    # Ponemos 'break 2' si estás en Python 3.8+ o una bandera para salir de ambos bucles
+                    # Para compatibilidad, usaremos una bandera.
+                    return all_results
+                
+                # Pausa AUMENTADA para ser más respetuosos
+                time.sleep(10)
+                break # Sale del bucle de reintento y va a la siguiente página
+
+            except requests.exceptions.RequestException as e:
+                print(f"Error en la página {page}: {e}")
+                return all_results # Devuelve lo que ha conseguido hasta ahora
     return all_results
 
-def get_existing_links():
-    """Lee los enlaces que ya existen en el archivo para evitar duplicados."""
-    if not os.path.exists(OUTPUT_FILE):
-        return set()
-    with open(OUTPUT_FILE, 'r', encoding='utf-8') as f:
-        return set(line.strip() for line in f)
-
 def main():
-    """Función principal del script."""
     open(OUTPUT_FILE, 'a').close()
-    # Para la búsqueda de M3U, es mejor una consulta más simple y sin fecha
-    # para maximizar los resultados hasta el límite de 1000.
-    query = 'extension:m3u' 
-    
+    query = 'extension:m3u'
     results = search_github(query)
     
     if not results:
         print("No se encontraron nuevos enlaces.")
         return
 
-    existing_links = get_existing_links()
+    # El resto de la función main no necesita cambios...
+    with open(OUTPUT_FILE, 'r', encoding='utf-8') as f:
+        existing_links = set(line.strip() for line in f)
+
     new_links_found = 0
-    
     with open(OUTPUT_FILE, 'a', encoding='utf-8') as f:
         for item in results:
             raw_url = item['html_url'].replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/")
