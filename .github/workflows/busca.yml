@@ -30,14 +30,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Esperar 60 segundos para reiniciar el límite de la API
-        run: sleep 60
-        shell: bash
+  #    - name: Esperar 60 segundos para reiniciar el límite de la API
+   #     run: sleep 60
+   #     shell: bash
 
-      - name: Ejecutar script M3U (scraper.py)
-        run: python scraper.py
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #  - name: Ejecutar script M3U (scraper.py)
+    #    run: python scraper.py
+    #    env:
+    #      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # --- PASO DE COMMIT MODIFICADO ---
       - name: Hacer commit de los cambios
@@ -45,7 +45,8 @@ jobs:
         with:
           commit_message: "📝 Actualización automática de enlaces M3U y MPD"
           # IMPORTANTE: Ahora vigila los dos archivos
-          file_pattern: "todas.txt trocalaoca.txt" 
+          #file_pattern: "todas.txt trocalaoca.txt" 
+          file_pattern: "trocalaoca.txt" 
           commit_user_name: "GitHub Actions Bot"
           commit_user_email: "actions@github.com"
           commit_author: "GitHub Actions Bot <actions@github.com>"
