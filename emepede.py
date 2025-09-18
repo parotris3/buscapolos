@@ -2,24 +2,26 @@ import os
 import requests
 from datetime import datetime, timedelta
 
-# Token de autenticación de GitHub (proporcionado por GitHub Actions)
+# ... (el resto del código es igual, no es necesario copiarlo todo) ...
+
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 if not GITHUB_TOKEN:
-    raise ValueError("No se encontró el GITHUB_TOKEN. Asegúrate de que se está ejecutando en un entorno de GitHub Actions.")
+    raise ValueError("No se encontró el GITHUB_TOKEN...")
 
-# Nombre del archivo donde se guardarán los enlaces
-OUTPUT_FILE = "trocalaoca.txt" # <-- ÚNICO CAMBIO: Nuevo nombre de archivo
-# URL de la API de búsqueda de código de GitHub
+OUTPUT_FILE = "trocalaoca.txt"
 API_URL = "https://api.github.com/search/code"
 
 def get_search_date():
-    """Determina la fecha de búsqueda: 7 días si el archivo no existe, 24 horas si ya existe."""
+    """Determina la fecha de búsqueda."""
     if not os.path.exists(OUTPUT_FILE):
-        print(f"Primera ejecución para {OUTPUT_FILE}: buscando en los últimos 7 días.")
-        return (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+        print(f"Primera ejecución para {OUTPUT_FILE}: buscando en los últimos 60 días.")
+        # --- LÍNEA MODIFICADA ---
+        return (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d')
     else:
         print(f"Ejecución diaria para {OUTPUT_FILE}: buscando en las últimas 24 horas.")
         return (datetime.now() - timedelta(hours=24)).strftime('%Y-%m-%d')
+
+# ... (El resto del script, desde "def search_github(query):" hasta el final, no cambia) ...
 
 def search_github(query):
     """Busca en GitHub usando la consulta proporcionada."""
@@ -59,7 +61,6 @@ def get_existing_mpd_links():
 def main():
     """Función principal del script."""
     since_date = get_search_date()
-    # Busca la cadena ".mpd" dentro del contenido de los archivos
     query = f'".mpd" in:file pushed:>{since_date}'
     
     files_containing_mpd = search_github(query)
