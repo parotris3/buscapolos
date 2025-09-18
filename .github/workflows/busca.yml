@@ -1,10 +1,7 @@
-name: Buscar Enlaces M3U
+name: Buscapolos
 
 on:
-  # Permite ejecutar este workflow manualmente desde la pestaña Actions
   workflow_dispatch:
-  
-  # Ejecuta el workflow todos los días a las 05:00 UTC
   schedule:
     - cron: '0 5 * * *'
 
@@ -13,34 +10,37 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
-      # 1. Clona tu repositorio para que el script tenga acceso al código
       - name: Checkout del repositorio
         uses: actions/checkout@v4
 
-      # 2. Configura el entorno de Python
       - name: Configurar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      # 3. Instala las dependencias necesarias (en este caso, 'requests')
       - name: Instalar dependencias
         run: pip install requests
 
-      # 4. Ejecuta el script de Python
-      #    Le pasamos el GITHUB_TOKEN como una variable de entorno para que el script pueda autenticarse
-      - name: Ejecutar el script de búsqueda
+      # --- PASOS DE EJECUCIÓN MODIFICADOS ---
+      - name: Ejecutar script M3U (scraper.py)
         run: python scraper.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 5. Si el script modificó el archivo todas.txt, esta acción crea un commit y lo sube al repositorio
+      - name: Ejecutar script MPD (emepede.py)
+        run: python emepede.py # <-- NUEVO: Ejecuta el segundo script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --- PASO DE COMMIT MODIFICADO ---
       - name: Hacer commit de los cambios
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "📝 Actualización automática de enlaces M3U"
-          file_pattern: todas.txt
+          commit_message: "📝 Actualización automática de enlaces M3U y MPD"
+          # IMPORTANTE: Ahora vigila los dos archivos
+          file_pattern: "todas.txt trocalaoca.txt" 
           commit_user_name: "GitHub Actions Bot"
           commit_user_email: "actions@github.com"
           commit_author: "GitHub Actions Bot <actions@github.com>"
