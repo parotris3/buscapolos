@@ -70,6 +70,7 @@ def get_existing_links():
 
 def main():
     """Función principal del script."""
+    open(OUTPUT_FILE, 'a').close()
     # Para la búsqueda de M3U, es mejor una consulta más simple y sin fecha
     # para maximizar los resultados hasta el límite de 1000.
     query = 'extension:m3u' 
