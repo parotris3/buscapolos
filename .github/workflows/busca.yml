@@ -29,6 +29,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Esperar 60 segundos para reiniciar el límite de la API
+        run: sleep 60
+        shell: bash
+
       - name: Ejecutar script MPD (emepede.py)
         run: python emepede.py # <-- NUEVO: Ejecuta el segundo script
         env:
