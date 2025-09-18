@@ -26,7 +26,8 @@ def search_github(since_date):
     # --- LÍNEAS MODIFICADAS ---
     # Usamos "pushed:" para encontrar repositorios actualizados recientemente.
     
-    query = f'extension:m3u pushed:>{since_date}'
+    # query = f'iptv extension:m3u pushed:>{since_date}' # Dejamos la línea anterior comentada
+    query = 'extension:m3u' # Búsqueda súper simple: cualquier archivo .m3u
     print(f"Ejecutando la consulta en GitHub: '{query}'") # Añadimos un print para depuración
     # -------------------------
 
