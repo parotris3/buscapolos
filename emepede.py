@@ -46,7 +46,8 @@ def main():
     # --- CONSULTA FINAL Y CORRECTA ---
     # Buscamos archivos que contengan la palabra "http" Y la cadena exacta ".mpd".
     # Esto es un indicador muy fuerte de que el archivo contiene un enlace completo.
-    query = f'http ".mpd" pushed:>{since_date}'
+    #query = f'http ".mpd" pushed:>{since_date}'
+    query = 'http ".mpd"' # Deja solo esta, sin el filtro de fecha
     
     files_containing_mpd = search_github(query)
     
