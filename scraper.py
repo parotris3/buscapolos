@@ -24,7 +24,8 @@ def search_github(query):
     headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
     all_results = []
 
-    for page in range(1, 11): # Hasta 10 páginas (1000 resultados)
+    # Se ha aumentado a 15 páginas por si hay muchos resultados pequeños
+    for page in range(1, 15):
         params = {"q": query, "per_page": 100, "page": page}
         
         while True: # Bucle de reintento
@@ -43,11 +44,9 @@ def search_github(query):
                 
                 if len(page_results) < 100:
                     print("Se encontró la última página. Terminando búsqueda.")
-                    # Ponemos 'break 2' si estás en Python 3.8+ o una bandera para salir de ambos bucles
-                    # Para compatibilidad, usaremos una bandera.
                     return all_results
                 
-                # Pausa AUMENTADA para ser más respetuosos
+                # Pausa para ser respetuosos con la API
                 time.sleep(10)
                 break # Sale del bucle de reintento y va a la siguiente página
 
@@ -57,15 +56,22 @@ def search_github(query):
     return all_results
 
 def main():
+    """Función principal del script."""
     open(OUTPUT_FILE, 'a').close()
-    query = 'extension:m3u'
+
+    # --- CAMBIO PRINCIPAL AQUÍ ---
+    # 1. Calculamos la fecha de hace 7 días
+    since_date = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+    # 2. Añadimos el filtro de fecha a la consulta
+    query = f'extension:m3u pushed:>{since_date}'
+    
     results = search_github(query)
     
     if not results:
-        print("No se encontraron nuevos enlaces.")
+        print("No se encontraron nuevos enlaces en los últimos 7 días.")
         return
 
-    # El resto de la función main no necesita cambios...
+    # Leemos los enlaces que ya existen para no añadir duplicados
     with open(OUTPUT_FILE, 'r', encoding='utf-8') as f:
         existing_links = set(line.strip() for line in f)
 
