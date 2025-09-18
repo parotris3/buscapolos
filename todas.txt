@@ -98,3 +98,6 @@ https://raw.githubusercontent.com/salex777/iptvX/a7f9d2072c0aad28f48b1950cd86998
 https://raw.githubusercontent.com/ohjust/IPTV/1367572c604ef3ec569d7a72bfa04ec1d72c651d/4.m3u
 https://raw.githubusercontent.com/Rasis2000/tis/e557576497ccc4120ba5c5917f0ffd5288a826d0/rr.m3u
 https://raw.githubusercontent.com/yIsus-mEx/AF1CIONADOS/3c320fbdc739b299f686f828ef2728c037812585/Movies.pruebas.m3u
+https://raw.githubusercontent.com/taksssss/tv/162523ef02362f536b81e392309a40f9c87d8bf3/assets/51zmt.m3u
+https://raw.githubusercontent.com/zhi35/iptv/8c2a4d302860c6eff9d16d29fb248305f83ae5f6/radio.m3u
+https://raw.githubusercontent.com/isw866/iptv/58cb2eb7ec12ddc25e7d0b56dc9300e0959627f2/hktw.m3u
